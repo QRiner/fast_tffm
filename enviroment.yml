@@ -1,0 +1,9 @@
+name: ee_train
+channels:
+  - anaconda
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge
+dependencies:
+  - python=3.6
+  - pip:
+    - tensorflow=1.13.1
+    - pandas=0.24.2
