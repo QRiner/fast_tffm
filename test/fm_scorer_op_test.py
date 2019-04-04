@@ -2,7 +2,7 @@ import sys
 
 sys.path.append(sys.path[0] + '/../python/')
 import tensorflow as tf
-from python.fm.model import fm_ops
+from fast_tffm.fm import fm_ops
 import random
 from tensorflow.python.platform import googletest
 

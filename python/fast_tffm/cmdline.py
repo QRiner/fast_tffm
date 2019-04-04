@@ -1,6 +1,5 @@
 import sys
-from fm.config import *
-from fm.runner import train, predict
+from fast_tffm.fm.runner import train, predict
 
 cmd_instruction = '''Usage:
   1. Local training.

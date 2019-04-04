@@ -1,10 +1,10 @@
-import sys, threading, time
+import sys
 
 file_path = sys.path[0]
 sys.path.append(file_path + '/../python')
 import tensorflow as tf
 from tensorflow.python.platform import googletest
-from python.fm.model import fm_ops
+from fast_tffm.fm import fm_ops
 
 
 class FmParserOpTest(tf.test.TestCase):

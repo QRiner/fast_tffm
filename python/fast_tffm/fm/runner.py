@@ -1,6 +1,6 @@
 import threading, time, random, os
-from fm.config import RunnerConfig
-from fm.model import LocalFmModel, DistFmModel
+from fast_tffm.fm import RunnerConfig
+from fast_tffm.fm import LocalFmModel, DistFmModel
 import tensorflow as tf
 
 PREDICT_BATCH_SIZE = 10000
