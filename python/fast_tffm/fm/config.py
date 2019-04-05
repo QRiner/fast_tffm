@@ -1,4 +1,12 @@
 import configparser
+from enum import Enum
+
+
+class Modes(Enum):
+    train = 1
+    dist_train = 2
+    predict = 3
+    dist_predict = 4
 
 
 class RunnerConfig:
@@ -10,10 +18,10 @@ class RunnerConfig:
 
     @mode.setter
     def mode(self, value):
-        if value in RunnerConfig:
-            self.mode = value
+        if value in Modes.__members__:
+            self.mode = Modes[value]
         else:
-            raise ValueError('mode:[{}] not in allowed modes:[{}]'.format(value, ','.join(RunnerConfig.MODES)))
+            raise ValueError('mode:[{}] not in allowed modes:[{}]'.format(value, ','.join(Modes.__members__)))
 
     @property
     def job_name(self):

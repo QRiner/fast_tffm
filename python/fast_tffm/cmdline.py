@@ -1,5 +1,6 @@
 import sys
 from fast_tffm.fm.runner import train, predict
+from fast_tffm.fm.config import RunnerConfigParser, Modes
 
 cmd_instruction = '''Usage:
   1. Local training.
@@ -34,9 +35,9 @@ def main(args):
     cfg_file = args[2]
     job_name = ''
     task_idx = 0
-    if mode == 'train' or mode == 'predict':
+    if mode == Modes.train.name or mode == Modes.predict.name:
         check_argument_error(argc == 3)
-    elif mode == 'dist_train' or mode == 'dist_predict':
+    elif mode == Modes.dist_train.name or mode == Modes.dist_predict.name:
         check_argument_error(argc == 5)
         job_name = args[3]
         task_idx = int(args[4])
@@ -44,9 +45,9 @@ def main(args):
         check_argument_error(False)
     conf_parser = RunnerConfigParser(cfg_file, mode, job_name, task_idx)
     config = conf_parser.parse_config()
-    if mode == 'train' or mode == 'dist_train':
+    if mode == Modes.train.name or mode == Modes.dist_train.name:
         train(config)
-    elif mode == 'predict' or mode == 'dist_predict':
+    elif mode == Modes.predict.name or mode == Modes.dist_predict.name:
         predict(config)
 
 

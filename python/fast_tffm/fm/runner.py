@@ -1,6 +1,6 @@
 import threading, time, random, os
-from fast_tffm.fm import RunnerConfig
-from fast_tffm.fm import LocalFmModel, DistFmModel
+from fast_tffm.fm.config import RunnerConfig
+from fast_tffm.fm.model import LocalFmModel, DistFmModel
 import tensorflow as tf
 
 PREDICT_BATCH_SIZE = 10000
@@ -9,6 +9,10 @@ PREDICT_BATCH_SIZE = 10000
 class _TrainStats:
     pass
 
+def _parse_function(example_proto):
+  features = {"feature1": tf.FixedLenFeature((), tf.string, default_value=""), "feature2": tf.FixedLenFeature((), tf.string, default_value="")}
+  parsed_features = tf.parse_single_example(example_proto, features)
+  return parsed_features["feature1"], parsed_features["feature2"]
 
 def _train(sess, supervisor, worker_num, is_master_worker, need_to_init, model, train_files, weight_files,
            validation_files, epoch_num, thread_num, model_file, output_progress_every_n_examples=10000):
@@ -122,6 +126,9 @@ def _queue_size(train_files, validation_files, epoch_num):
 
 
 def train(conf: RunnerConfig):
+    # dataset = tf.data.TFRecordDataset(["hdfs://namenode:8020/path/to/file1.tfrecords",
+    #                                    "hdfs://namenode:8020/path/to/file2.tfrecords"])
+    # dataset = dataset.map(_parse_function)
     optimizer = tf.train.AdagradOptimizer(conf.learning_rate, conf.adagrad_init_accumulator)
     queue_size = _queue_size(conf.train_files, conf.validation_files, conf.epoch_num)
     if conf.mode == 'train':

@@ -67,3 +67,7 @@ python fast_tffm.py dist_predict sample.cfg worker 1
   Should have the same line number with the corresponding data file. Each line contains one real number.
 
 Check the data/weight files in the data folder for details. The data files are sampled from [criteo lab dataset](http://labs.criteo.com/tag/dataset/).
+
+## Hdfs File
+1. Environment
+https://github.com/tensorflow/examples/blob/master/community/en/docs/deploy/hadoop.md

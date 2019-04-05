@@ -1,22 +1,27 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.10)
 project(fast_tffm)
-<<<<<<< HEAD
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++11")
-=======
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++11 -ltensorflow_framework")
->>>>>>> add tensorflow 1.13.1 support
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++11 -ltensorflow_framework -O2")
 if (APPLE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -undefined dynamic_lookup")
 elseif (UNIX)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.0)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=1")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
+  endif()
 endif()
+
 set(CMAKE_SHARED_LIBRARY_SUFFIX ".so")
-execute_process(COMMAND python -c "import tensorflow as tf; print(tf.sysconfig.get_include()); print(tf.sysconfig.get_lib())" OUTPUT_VARIABLE TF_INC)
+execute_process(COMMAND python -c "import tensorflow as tf; print(tf.sysconfig.get_include())" OUTPUT_VARIABLE TF_INC)
 include_directories(${TF_INC})
 execute_process(COMMAND python -c "import tensorflow as tf; print(tf.sysconfig.get_lib())" OUTPUT_VARIABLE TF_LIB)
 link_directories(${TF_LIB})
+
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib/)
-add_library(fast_tffm SHARED cc/fm_grad_op.cc cc/fm_parser_op.cc cc/fm_scorer_op.cc)
+FILE(GLOB FM_OP_SOURCE cc/fm/*.cc)
+add_library(fast_tffm SHARED FM_OP_SOURCE)
+
 enable_testing()
 add_test(NAME test_scorer COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/test/fm_scorer_op_test.py)
 add_test(NAME test_parser COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/test/fm_parser_op_test.py)
