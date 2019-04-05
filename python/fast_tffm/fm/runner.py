@@ -1,5 +1,5 @@
-import threading, time, random, os
-from fast_tffm.fm.config import RunnerConfig
+import threading, time, random, os, sys
+from fast_tffm.fm.config import RunnerConfig, Modes
 from fast_tffm.fm.model import LocalFmModel, DistFmModel
 import tensorflow as tf
 
@@ -131,13 +131,13 @@ def train(conf: RunnerConfig):
     # dataset = dataset.map(_parse_function)
     optimizer = tf.train.AdagradOptimizer(conf.learning_rate, conf.adagrad_init_accumulator)
     queue_size = _queue_size(conf.train_files, conf.validation_files, conf.epoch_num)
-    if conf.mode == 'train':
+    if conf.mode == Modes.train:
         model = LocalFmModel(queue_size, conf.epoch_num, conf.vocabulary_size, conf.vocabulary_block_num,
                              conf.hash_feature_id, conf.factor_num, conf.init_value_range, conf.loss_type,
                              optimizer, conf.batch_size, conf.factor_lambda, conf.bias_lambda)
         _train(tf.Session(), None, 1, True, True, model, conf.train_files, conf.weight_files, conf.validation_files,
                conf.epoch_num, conf.thread_num, conf.model_file)
-    elif conf.mode == 'dist_train':
+    elif conf.mode == Modes.dist_train:
         cluster = tf.train.ClusterSpec({'ps': conf.ps_hosts, 'worker': conf.worker_hosts})
         server = tf.train.Server(cluster, job_name=conf.job_name, task_index=conf.task_idx)
         if conf.job_name == 'ps':
@@ -173,7 +173,7 @@ def _predict(sess, supervisor, is_master_worker, model, model_file, predict_file
             fid = 0
             while True:
                 _, _, fname, _ = sess.run(model.file_dequeue_op)
-                score_file = score_path + '/' + os.path.basename(fname) + '.score'
+                score_file = os.path.join(score_path, '{}.score'.format(os.path.basename(fname).decode("utf-8") ))
                 print('Start processing %s, scores written to %s ...' % (fname, score_file))
                 with open(score_file, 'w') as o:
                     while True:
@@ -193,7 +193,7 @@ def _predict(sess, supervisor, is_master_worker, model, model_file, predict_file
 
 
 def predict(conf: RunnerConfig):
-    if conf.mode == 'predict':
+    if conf.mode == Modes.predict:
         model = LocalFmModel(len(conf.predict_files), 0, conf.vocabulary_size, conf.vocabulary_block_num,
                              conf.hash_feature_id, conf.factor_num, 0, None, None, PREDICT_BATCH_SIZE, 0, 0)
         _predict(tf.Session(), None, True, model, conf.model_file, conf.predict_files, conf.score_path, True)

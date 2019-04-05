@@ -18,9 +18,9 @@ include_directories(${TF_INC})
 execute_process(COMMAND python -c "import tensorflow as tf; print(tf.sysconfig.get_lib())" OUTPUT_VARIABLE TF_LIB)
 link_directories(${TF_LIB})
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib/)
-FILE(GLOB FM_OP_SOURCE cc/fm/*.cc)
-add_library(fast_tffm SHARED FM_OP_SOURCE)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/python/lib/)
+file(GLOB FM_OP_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/cc/fm/*.cc)
+add_library(fast_tffm SHARED ${FM_OP_SOURCE})
 
 enable_testing()
 add_test(NAME test_scorer COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/test/fm_scorer_op_test.py)

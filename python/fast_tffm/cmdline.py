@@ -25,7 +25,8 @@ def check_argument_error(condition):
         sys.exit(1)
 
 
-def main(args):
+def main():
+    args = sys.argv
     argc = len(args)
     if argc == 1:
         print(cmd_instruction, )
@@ -43,7 +44,7 @@ def main(args):
         task_idx = int(args[4])
     else:
         check_argument_error(False)
-    conf_parser = RunnerConfigParser(cfg_file, mode, job_name, task_idx)
+    conf_parser = RunnerConfigParser(cfg_file, Modes[mode], job_name, task_idx)
     config = conf_parser.parse_config()
     if mode == Modes.train.name or mode == Modes.dist_train.name:
         train(config)
@@ -52,4 +53,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()
