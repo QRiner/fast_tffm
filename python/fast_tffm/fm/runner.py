@@ -9,16 +9,19 @@ PREDICT_BATCH_SIZE = 10000
 class _TrainStats:
     pass
 
+
 def _parse_function(example_proto):
-  features = {"feature1": tf.FixedLenFeature((), tf.string, default_value=""), "feature2": tf.FixedLenFeature((), tf.string, default_value="")}
-  parsed_features = tf.parse_single_example(example_proto, features)
-  return parsed_features["feature1"], parsed_features["feature2"]
+    features = {"feature1": tf.FixedLenFeature((), tf.string, default_value=""),
+                "feature2": tf.FixedLenFeature((), tf.string, default_value="")}
+    parsed_features = tf.parse_single_example(example_proto, features)
+    return parsed_features["feature1"], parsed_features["feature2"]
+
 
 def _train(sess, supervisor, worker_num, is_master_worker, need_to_init, model, train_files, weight_files,
            validation_files, epoch_num, thread_num, model_file, output_progress_every_n_examples=10000):
     with sess as sess:
         if is_master_worker:
-            if weight_files != None:
+            if weight_files is not None:
                 train_and_weight_files = [item for item in zip(train_files, weight_files)]
             else:
                 train_and_weight_files = [item for item in zip(train_files, ["" for i in range(len(train_files))])]
@@ -30,7 +33,7 @@ def _train(sess, supervisor, worker_num, is_master_worker, need_to_init, model, 
                     sess.run(model.file_enqueue_op,
                              feed_dict={model.epoch_id: i, model.is_training: True, model.data_file: data_file,
                                         model.weight_file: weight_file})
-                if validation_files != None:
+                if validation_files is not None:
                     for validation_file in validation_files:
                         sess.run(model.file_enqueue_op, feed_dict={model.epoch_id: i, model.is_training: False,
                                                                    model.data_file: validation_file,
@@ -50,7 +53,7 @@ def _train(sess, supervisor, worker_num, is_master_worker, need_to_init, model, 
 
                 def run():
                     try:
-                        while not coord.should_stop() and not (supervisor != None and supervisor.should_stop()):
+                        while not coord.should_stop() and not (supervisor is not None and supervisor.should_stop()):
                             if is_training:
                                 _, loss, example_num = sess.run([model.opt, model.loss, model.example_num],
                                                                 feed_dict={model.file_id: fid,
@@ -76,7 +79,7 @@ def _train(sess, supervisor, worker_num, is_master_worker, need_to_init, model, 
                             train_stats.lock.release()
                     except Exception as ex:
                         coord.request_stop(ex)
-                        if supervisor != None:
+                        if supervisor is not None:
                             supervisor.request_stop(ex)
                         raise
 
@@ -94,7 +97,7 @@ def _train(sess, supervisor, worker_num, is_master_worker, need_to_init, model, 
         except tf.errors.OutOfRangeError:
             pass
         except Exception as ex:
-            if supervisor != None:
+            if supervisor is not None:
                 supervisor.request_stop(ex)
             raise
 
@@ -120,7 +123,7 @@ def _train(sess, supervisor, worker_num, is_master_worker, need_to_init, model, 
 
 def _queue_size(train_files, validation_files, epoch_num):
     qsize = len(train_files)
-    if validation_files != None:
+    if validation_files is not None:
         qsize += len(validation_files)
     return qsize * epoch_num
 
@@ -173,7 +176,7 @@ def _predict(sess, supervisor, is_master_worker, model, model_file, predict_file
             fid = 0
             while True:
                 _, _, fname, _ = sess.run(model.file_dequeue_op)
-                score_file = os.path.join(score_path, '{}.score'.format(os.path.basename(fname).decode("utf-8") ))
+                score_file = os.path.join(score_path, '{}.score'.format(os.path.basename(fname).decode("utf-8")))
                 print('Start processing %s, scores written to %s ...' % (fname, score_file))
                 with open(score_file, 'w') as o:
                     while True:
@@ -187,7 +190,7 @@ def _predict(sess, supervisor, is_master_worker, model, model_file, predict_file
         except tf.errors.OutOfRangeError:
             pass
         except Exception as ex:
-            if supervisor != None:
+            if supervisor is not None:
                 supervisor.request_stop(ex)
             raise
 

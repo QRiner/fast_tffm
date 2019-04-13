@@ -232,7 +232,7 @@ class RunnerConfigParser:
 
     def _read_strs_config(self, section, option, not_null=True):
         val = self._read_config(section, option, not_null)
-        if val != None:
+        if val is not None:
             return [s.strip() for s in val.split(RunnerConfigParser.STR_DELIMITER)]
         return None
 

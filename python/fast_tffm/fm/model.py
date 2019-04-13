@@ -1,5 +1,5 @@
 import tensorflow as tf
-import os
+import os, uuid, time
 from tensorflow.python.framework import ops
 
 # TODO replace with enviroment variable or conf
@@ -87,7 +87,7 @@ class FmModelBase:
                 self.loss = tf.reduce_sum(weights * tf.square(self.pred_score - labels))
             else:
                 self.loss = None
-            if optimizer != None:
+            if optimizer is not None:
                 self.opt = optimizer.minimize(self.loss + reg_score)
             self.init_vars = tf.initialize_all_variables()
             self.saver = tf.train.Saver(self.vocab_blocks)
@@ -97,6 +97,15 @@ class FmModelBase:
 
     def default_device(self):
         raise NotImplementedError("Subclasses should implement this!")
+
+    def backup_old_model(self, model_dir, model_file_prefix):
+        files = os.listdir(model_dir)
+        previous_model_files = filter(lambda file:  os.path.basename(file).startswith(model_file_prefix), files)
+        backup_dir = os.path.join(model_dir, time.strftime('%Y-%m-%d_%H-%m-%S'))
+        os.makedirs(backup_dir, exist_ok=True)
+        for from_path in previous_model_files:
+            dest_path = os.path.join(backup_dir, os.path.basename(from_path))
+            os.rename(from_path, dest_path)
 
 
 class DistFmModel(FmModelBase):
@@ -116,6 +125,9 @@ class DistFmModel(FmModelBase):
             tf.train.replica_device_setter(worker_device='/job:worker/task:%d' % self.task_index, ps_device="/job:ps",
                                            cluster=self.cluster))
 
+    def save_model(self, sess, model_file, *args, **kwargs):
+        self.saver.save(sess, model_file, args, kwargs)
+
 
 class LocalFmModel(FmModelBase):
     def main_ps_device(self):
@@ -123,3 +135,14 @@ class LocalFmModel(FmModelBase):
 
     def default_device(self):
         return tf.device('/cpu:0')
+
+    def save_model(self, sess, model_file, *args, **kwargs):
+        model_file_prefix = os.path.basename(model_file)
+        model_file_dir = os.path.dirname(model_file)
+        if not os.path.exists(os.path.dirname(model_file)):
+            os.makedirs(model_file, exist_ok=True)
+        self.backup_old_model(model_file_dir, model_file_prefix)
+        self.saver.save(sess, model_file, args, kwargs)
+
+    def restore(self, sess, model_file):
+        self.saver.restore(sess, model_file)
