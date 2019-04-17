@@ -117,7 +117,7 @@ def _train(sess, supervisor, worker_num, is_master_worker, need_to_init, model, 
                     print('; Validation: %.5f' % (validation_loss / validation_example_num))
                 else:
                     print()
-            model.saver.save(sess, model_file, write_meta_graph=False)
+            model.save_model(sess, model_file, write_meta_graph=False)
             print('Model saved to', model_file)
 
 
@@ -177,13 +177,18 @@ def _predict(sess, supervisor, is_master_worker, model, model_file, predict_file
             while True:
                 _, _, fname, _ = sess.run(model.file_dequeue_op)
                 score_file = os.path.join(score_path, '{}.score'.format(os.path.basename(fname).decode("utf-8")))
-                print('Start processing %s, scores written to %s ...' % (fname, score_file))
+                print('Start processing {}, scores written to {} ...'.format(fname, score_file))
                 with open(score_file, 'w') as o:
                     while True:
+                        start_time = time.time()
                         pred_score, example_num = sess.run([model.pred_score, model.example_num],
                                                            feed_dict={model.file_id: fid, model.data_file: fname,
                                                                       model.weight_file: ''})
-                        if example_num == 0: break
+                        if example_num == 0:
+                            break
+                        elapse = time.time() - start_time
+                        print('Took {:.2f} seconds to processed {} examples, {} example/s'.format(elapse, example_num,
+                                                                                                  example_num / elapse))
                         for score in pred_score:
                             o.write(str(score) + '\n')
                 fid += 1

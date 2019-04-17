@@ -3,7 +3,7 @@ import os, uuid, time
 from tensorflow.python.framework import ops
 
 # TODO replace with enviroment variable or conf
-fm_ops = tf.load_op_library(os.path.dirname(os.path.realpath(__file__)) + '/../lib/libfast_tffm.so')
+fm_ops = tf.load_op_library(os.path.dirname(os.path.realpath(__file__)) + '/../../lib/libfast_tffm.so')
 
 
 @ops.RegisterGradient("FmScorer")
@@ -126,6 +126,11 @@ class DistFmModel(FmModelBase):
                                            cluster=self.cluster))
 
     def save_model(self, sess, model_file, *args, **kwargs):
+        model_file_prefix = os.path.basename(model_file)
+        model_file_dir = os.path.dirname(model_file)
+        if not os.path.exists(os.path.dirname(model_file)):
+            os.makedirs(model_file, exist_ok=True)
+        self.backup_old_model(model_file_dir, model_file_prefix)
         self.saver.save(sess, model_file, args, kwargs)
 
 

@@ -1,4 +1,4 @@
-import configparser
+import configparser, glob
 from enum import Enum
 
 
@@ -205,19 +205,10 @@ class RunnerConfig:
         self._score_path = value
 
 
-class RunnerConfigParser:
-    GENERAL_SECTION = 'General'
-    TRAIN_SECTION = 'Train'
-    PREDICT_SECTION = 'Predict'
-    CLUSTER_SPEC_SECTION = 'ClusterSpec'
-    STR_DELIMITER = ','
-
-    def __init__(self, conf_file_path, mode, job_name='', task_idx=0):
+class SimpleParser:
+    def __init__(self, conf_file_path):
         self.config = configparser.ConfigParser()
         self.config.read(conf_file_path)
-        self.mode = mode
-        self.job_name = job_name
-        self.task_idx = task_idx
 
     def _read_config(self, section, option, not_null=True):
         if not self.config.has_option(section, option):
@@ -235,6 +226,30 @@ class RunnerConfigParser:
         if val is not None:
             return [s.strip() for s in val.split(RunnerConfigParser.STR_DELIMITER)]
         return None
+
+
+class RunnerConfigParser(SimpleParser):
+    GENERAL_SECTION = 'General'
+    TRAIN_SECTION = 'Train'
+    PREDICT_SECTION = 'Predict'
+    CLUSTER_SPEC_SECTION = 'ClusterSpec'
+    STR_DELIMITER = ','
+
+    def __init__(self, conf_file_path, mode, job_name='', task_idx=0):
+        super().__init__(conf_file_path)
+        self.mode = mode
+        self.job_name = job_name
+        self.task_idx = task_idx
+
+    def _match_files(self, file_path):
+        if file_path is None:
+            return None
+        file_lists = []
+        for file in file_path:
+            matched = glob.glob(file)
+            matched.sort()
+            file_lists = file_lists + matched
+        return file_lists
 
     def parse_config(self):
         rc = RunnerConfig()
@@ -255,17 +270,20 @@ class RunnerConfigParser:
         rc.bias_lambda = float(self._read_config(RunnerConfigParser.TRAIN_SECTION, 'bias_lambda'))
         rc.thread_num = int(self._read_config(RunnerConfigParser.TRAIN_SECTION, 'thread_num'))
         rc.epoch_num = int(self._read_config(RunnerConfigParser.TRAIN_SECTION, 'epoch_num'))
-        rc.train_files = self._read_strs_config(RunnerConfigParser.TRAIN_SECTION, 'train_files')
-        rc.weight_files = self._read_strs_config(RunnerConfigParser.TRAIN_SECTION, 'weight_files', False)
+        rc.train_files = self._match_files(self._read_strs_config(RunnerConfigParser.TRAIN_SECTION, 'train_files'))
+        rc.weight_files = self._match_files(
+            self._read_strs_config(RunnerConfigParser.TRAIN_SECTION, 'weight_files', False))
         if rc.weight_files is not None and len(rc.train_files) != len(rc.weight_files):
             raise ValueError('The numbers of train files and weight files do not match.')
-        rc.validation_files = self._read_strs_config(RunnerConfigParser.TRAIN_SECTION, 'validation_files', False)
+        rc.validation_files = self._match_files(
+            self._read_strs_config(RunnerConfigParser.TRAIN_SECTION, 'validation_files', False))
         rc.learning_rate = float(self._read_config(RunnerConfigParser.TRAIN_SECTION, 'learning_rate'))
         rc.adagrad_init_accumulator = float(
             self._read_config(RunnerConfigParser.TRAIN_SECTION, 'adagrad.initial_accumulator'))
         rc.loss_type = self._read_config(RunnerConfigParser.TRAIN_SECTION, 'loss_type').strip().lower()
         if rc.loss_type is not None and not rc.loss_type in ['logistic', 'mse']:
             raise ValueError('Unsupported loss type: %s' % rc.loss_type)
-        rc.predict_files = self._read_config(RunnerConfigParser.PREDICT_SECTION, 'predict_files').split(',')
+        rc.predict_files = self._match_files(
+            self._read_config(RunnerConfigParser.PREDICT_SECTION, 'predict_files').split(','))
         rc.score_path = self._read_config(RunnerConfigParser.PREDICT_SECTION, 'score_path')
         return rc

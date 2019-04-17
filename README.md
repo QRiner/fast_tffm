@@ -13,7 +13,8 @@ cd build
 cmake ../
 make
 make test
-cd ..
+cd ../python
+python setup.py install
 ```
 ### Local Training
 ```
